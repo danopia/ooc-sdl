@@ -264,6 +264,18 @@ StructSDLVideoInfo: cover from struct SDL_VideoInfo {
 
 StructSDLJoystick: cover from struct SDL_Joystick
 
+StructSDLCond: cover
+
+StructWMcursor: cover
+
+StructSDLThread: cover
+
+StructSDLMutex: cover
+
+StructSDLSemaphore: cover
+
+StructSDLSysWMmsg: cover
+
 SDLAudioStatus: extern(SDL_audiostatus) enum {
     stopped: extern(SDL_AUDIO_STOPPED)
     playing: extern(SDL_AUDIO_PLAYING)
@@ -728,7 +740,16 @@ SDLVideoFlags: enum {
 
 SDLVersion_: cover from StructSDLVersion_
 
-SDLCond: cover
+SDLCond: cover from StructSDLCond* {
+  new: extern(SDL_CreateCond) static func -> This
+  
+  wait: extern(SDL_CondWait) func (mutex: SDLMutex*) -> Int
+  waitTimeout: extern(SDL_CondWaitTimeout) func (mutex: SDLMutex*, ms: UInt32) -> Int
+  signal: extern(SDL_CondSignal) func -> Int
+  broadcast: extern(SDL_CondBroadcast) func -> Int
+  
+  destroy: extern(SDL_DestroyCond) func
+}
 
 SDLAudioCVT: cover from StructSDLAudioCVT
 
@@ -866,18 +887,6 @@ SDLSysWMmsg: cover
 
 SDLVideoInfo: cover from StructSDLVideoInfo
 
-StructSDLCond: cover
-
-StructWMcursor: cover
-
-StructSDLThread: cover
-
-StructSDLMutex: cover
-
-StructSDLSemaphore: cover
-
-StructSDLSysWMmsg: cover
-
 SDLJoystick: cover from StructSDLJoystick* {
   count: extern(SDL_NumJoysticks) static func -> Int
   name: extern(SDL_JoystickName) static func (deviceIndex: Int) -> String
@@ -936,7 +945,6 @@ sdlVideoInit: extern(SDL_VideoInit) func (driverName: const Char*, flags: SDLVid
 sdlOpenAudio: extern(SDL_OpenAudio) func (desired: SDLAudioSpec*, obtained: SDLAudioSpec*) -> Int
 sdlReadLE32: extern(SDL_ReadLE32) func (src: SDLRwops*) -> UInt32
 sdlCreateCursor: extern(SDL_CreateCursor) func (data: UInt8*, mask: UInt8*, w: Int, h: Int, hotX: Int, hotY: Int) -> SDLCursor*
-sdlCondWait: extern(SDL_CondWait) func (cond: SDLCond*, mut: SDLMutex*) -> Int
 sdlVideoModeOK: extern(SDL_VideoModeOK) func (width: Int, height: Int, bpp: Int, flags: SDLVideoFlags) -> Int
 sdlMixAudio: extern(SDL_MixAudio) func (dst: UInt8*, src: const UInt8*, len: UInt32, volume: Int)
 sdlReadLE64: extern(SDL_ReadLE64) func (src: SDLRwops*) -> UInt64
@@ -945,7 +953,6 @@ sdlGetKeyRepeat: extern(SDL_GetKeyRepeat) func (delay: Int*, interval: Int*)
 sdlShowCursor: extern(SDL_ShowCursor) func (toggle: Int) -> Int
 sdlRWFromFP: extern(SDL_RWFromFP) func (fp: FILE*, autoclose: Int) -> SDLRwops*
 sdlMapRGB: extern(SDL_MapRGB) func (format: const const SDLPixelFormat*, r: const UInt8, g: const UInt8, b: const UInt8) -> UInt32
-sdlCondSignal: extern(SDL_CondSignal) func (cond: SDLCond*) -> Int
 sdlHas3DNow: extern(SDL_Has3DNow) func -> Int
 sdlAudioQuit: extern(SDL_AudioQuit) func
 sdlBuildAudioCVT: extern(SDL_BuildAudioCVT) func (cvt: SDLAudioCVT*, srcFormat: UInt16, srcChannels: UInt8, srcRate: Int, dstFormat: UInt16, dstChannels: UInt8, dstRate: Int) -> Int
@@ -954,7 +961,6 @@ sdlCreateMutex: extern(SDL_CreateMutex) func -> SDLMutex*
 sdlVideoQuit: extern(SDL_VideoQuit) func
 sdlGLSwapBuffers: extern(SDL_GL_SwapBuffers) func
 sdlEnableUNICODE: extern(SDL_EnableUNICODE) func (enable: Int) -> Int
-sdlDestroyCond: extern(SDL_DestroyCond) func (cond: SDLCond*)
 sdlHasMMX: extern(SDL_HasMMX) func -> Int
 sdlWriteLE16: extern(SDL_WriteLE16) func (dst: SDLRwops*, value: UInt16) -> Int
 sdlWriteLE32: extern(SDL_WriteLE32) func (dst: SDLRwops*, value: UInt32) -> Int
@@ -988,7 +994,6 @@ sdlPauseAudio: extern(SDL_PauseAudio) func (pauseOn: Int)
 sdlUpperBlit: extern(SDL_UpperBlit) func (src: SDLSurface, srcrect: SDLRect*, dst: SDLSurface, dstrect: SDLRect*) -> Int
 sdlStrlwr: extern(SDL_strlwr) func (string: Char*) -> Char*
 sdlReadBE16: extern(SDL_ReadBE16) func (src: SDLRwops*) -> UInt16
-sdlCreateCond: extern(SDL_CreateCond) func -> SDLCond*
 sdlPeepEvents: extern(SDL_PeepEvents) func (events: SDLEvent*, numevents: Int, action: Int, mask: UInt32) -> Int
 sdlWMGetCaption: extern(SDL_WM_GetCaption) func (title: Char**, icon: Char**)
 sdlGLUpdateRects: extern(SDL_GL_UpdateRects) func (numrects: Int, rects: SDLRect*)
@@ -1032,8 +1037,6 @@ sdlAddTimer: extern(SDL_AddTimer) func (interval: UInt32, callback: SDLNewTimerC
 sdlReadBE32: extern(SDL_ReadBE32) func (src: SDLRwops*) -> UInt32
 sdlFreeCursor: extern(SDL_FreeCursor) func (cursor: SDLCursor*)
 sdlGLSetAttribute: extern(SDL_GL_SetAttribute) func (attr: Int, value: Int) -> Int
-sdlCondBroadcast: extern(SDL_CondBroadcast) func (cond: SDLCond*) -> Int
-sdlCondWaitTimeout: extern(SDL_CondWaitTimeout) func (cond: SDLCond*, mutex: SDLMutex*, ms: UInt32) -> Int
 sdlDestroyMutex: extern(SDL_DestroyMutex) func (mutex: SDLMutex*)
 sdlRWFromConstMem: extern(SDL_RWFromConstMem) func (mem: const Void*, size: Int) -> SDLRwops*
 sdlReadLE16: extern(SDL_ReadLE16) func (src: SDLRwops*) -> UInt16
