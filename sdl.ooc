@@ -102,26 +102,24 @@ StructSDLExposeEvent: cover from struct SDL_ExposeEvent {
     type: extern UInt8
 }
 
+StructSDLCd: cover from struct SDL_CD {
+    id: extern Int
+    status: extern SDLCDStatus
+    numtracks: extern Int
+    curTrack: extern(cur_track) Int
+    curFrame: extern(cur_frame) Int
+    track: extern SDLCdtrack
+}
+
 StructSDLCdtrack: cover from struct SDL_CDtrack {
-    id: extern UInt8
-    type: extern UInt8
+    id, type: extern UInt8 // SDLCDTrackTypes - not used here because it's UInt8 (TODO)
     unused: extern UInt16
-    length: extern UInt32
-    offset: extern UInt32
+    length, offset: extern UInt32
 }
 
 StructSDLPalette: cover from struct SDL_Palette {
     ncolors: extern Int
     colors: extern SDLColor*
-}
-
-StructSDLCd: cover from struct SDL_CD {
-    id: extern Int
-    status: extern Int
-    numtracks: extern Int
-    curTrack: extern(cur_track) Int
-    curFrame: extern(cur_frame) Int
-    track: extern SDLCdtrack*
 }
 
 StructSDLMouseButtonEvent: cover from struct SDL_MouseButtonEvent {
@@ -301,6 +299,11 @@ SDLCDStatus: extern(CDstatus) enum {
     playing: extern(CD_PLAYING)
     paused: extern(CD_PAUSED)
     error: extern(CD_ERROR)
+}
+
+SDLCDTrackTypes: enum {
+    audioTrack: extern(SDL_AUDIO_TRACK)
+    dataTrack: extern(SDL_DATA_TRACK)
 }
 
 SDLMod: extern enum {
@@ -653,11 +656,6 @@ SDLApplicationStates: enum {
     active: extern(SDL_APPACTIVE)
 }
 
-SDLCDROMTrackTypes: enum {
-    audioTrack: extern(SDL_AUDIO_TRACK)
-    dataTrack: extern(SDL_DATA_TRACK)
-}
-
 SDLEndianness: enum {
     little: extern(SDL_LIL_ENDIAN)
     big: extern(SDL_BIG_ENDIAN)
@@ -771,11 +769,24 @@ SDLMutex: cover
 
 SDLEventFilter: cover from Func
 
-SDLCdtrack: cover from StructSDLCdtrack
-
 SDLPalette: cover from StructSDLPalette
 
-SDLCd: cover from StructSDLCd
+SDLCd: cover from StructSDLCd* {
+  open: extern(SDL_CDOpen) static func (drive: Int) -> This
+  name: extern(SDL_CDName) static func (drive: Int) -> String
+  
+  play: extern(SDL_CDPlay) func (start: Int, length: Int) -> Int
+  playTracks: extern(SDL_CDPlayTracks) func (startTrack: Int, startFrame: Int, ntracks: Int, nframes: Int) -> Int
+  pause: extern(SDL_CDPause) func -> Int
+  resume: extern(SDL_CDResume) func -> Int
+  stop: extern(SDL_CDStop) func -> Int
+  
+  eject: extern(SDL_CDEject) func -> Int
+  
+  status: extern(SDL_CDStatus) func -> Int
+  close: extern(SDL_CDClose) func
+}
+SDLCdtrack: cover from StructSDLCdtrack*
 
 SDLMouseButtonEvent: cover from StructSDLMouseButtonEvent
 
@@ -921,7 +932,6 @@ sdlVideoInit: extern(SDL_VideoInit) func (driverName: const Char*, flags: SDLVid
 sdlOpenAudio: extern(SDL_OpenAudio) func (desired: SDLAudioSpec*, obtained: SDLAudioSpec*) -> Int
 sdlReadLE32: extern(SDL_ReadLE32) func (src: SDLRwops*) -> UInt32
 sdlCreateCursor: extern(SDL_CreateCursor) func (data: UInt8*, mask: UInt8*, w: Int, h: Int, hotX: Int, hotY: Int) -> SDLCursor*
-sdlCDPlay: extern(SDL_CDPlay) func (cdrom: SDLCd*, start: Int, length: Int) -> Int
 sdlCondWait: extern(SDL_CondWait) func (cond: SDLCond*, mut: SDLMutex*) -> Int
 sdlVideoModeOK: extern(SDL_VideoModeOK) func (width: Int, height: Int, bpp: Int, flags: SDLVideoFlags) -> Int
 sdlMixAudio: extern(SDL_MixAudio) func (dst: UInt8*, src: const UInt8*, len: UInt32, volume: Int)
@@ -957,7 +967,6 @@ sdlLoadFunction: extern(SDL_LoadFunction) func (handle: Void*, name: const Char*
 sdlLoadWAVRW: extern(SDL_LoadWAV_RW) func (src: SDLRwops*, freesrc: Int, spec: SDLAudioSpec*, audioBuf: UInt8**, audioLen: UInt32*) -> SDLAudioSpec*
 sdlGetError: extern(SDL_GetError) func -> Char*
 sdlCreateSemaphore: extern(SDL_CreateSemaphore) func (initialValue: UInt32) -> SDLSem*
-sdlCDClose: extern(SDL_CDClose) func (cdrom: SDLCd*)
 sdlQuitSubSystem: extern(SDL_QuitSubSystem) func (flags: SDLInitFlags)
 sdlStrlcat: extern(SDL_strlcat) func (dst: Char*, src: const Char*, maxlen: SizeT) -> SizeT
 sdlGetGammaRamp: extern(SDL_GetGammaRamp) func (red: UInt16*, green: UInt16*, blue: UInt16*) -> Int
@@ -965,8 +974,6 @@ sdlHasMMXExt: extern(SDL_HasMMXExt) func -> Int
 sdlHasRDTSC: extern(SDL_HasRDTSC) func -> Int
 sdlGetAudioStatus: extern(SDL_GetAudioStatus) func -> Int
 sdlSemTryWait: extern(SDL_SemTryWait) func (sem: SDLSem*) -> Int
-sdlCDName: extern(SDL_CDName) func (drive: Int) -> const Char*
-sdlCDStop: extern(SDL_CDStop) func (cdrom: SDLCd*) -> Int
 sdlWarpMouse: extern(SDL_WarpMouse) func (x: UInt16, y: UInt16)
 sdlWMIconifyWindow: extern(SDL_WM_IconifyWindow) func -> Int
 sdlGLUnlock: extern(SDL_GL_Unlock) func
@@ -974,7 +981,6 @@ sdlAudioInit: extern(SDL_AudioInit) func (driverName: const Char*) -> Int
 sdlSetTimer: extern(SDL_SetTimer) func (interval: UInt32, callback: SDLTimerCallback) -> Int
 sdlRemoveTimer: extern(SDL_RemoveTimer) func (t: SDLTimerID) -> Int
 sdlPauseAudio: extern(SDL_PauseAudio) func (pauseOn: Int)
-sdlCDResume: extern(SDL_CDResume) func (cdrom: SDLCd*) -> Int
 sdlUpperBlit: extern(SDL_UpperBlit) func (src: SDLSurface, srcrect: SDLRect*, dst: SDLSurface, dstrect: SDLRect*) -> Int
 sdlStrlwr: extern(SDL_strlwr) func (string: Char*) -> Char*
 sdlReadBE16: extern(SDL_ReadBE16) func (src: SDLRwops*) -> UInt16
@@ -987,7 +993,6 @@ sdlGetRGBA: extern(SDL_GetRGBA) func (pixel: UInt32, fmt: const const SDLPixelFo
 sdlUnlockYUVOverlay: extern(SDL_UnlockYUVOverlay) func (overlay: SDLOverlay*)
 sdlDisplayYUVOverlay: extern(SDL_DisplayYUVOverlay) func (overlay: SDLOverlay*, dstrect: SDLRect*) -> Int
 sdlInitSubSystem: extern(SDL_InitSubSystem) func (flags: SDLInitFlags) -> Int
-sdlCDOpen: extern(SDL_CDOpen) func (drive: Int) -> SDLCd*
 sdlSetCursor: extern(SDL_SetCursor) func (cursor: SDLCursor*)
 sdlFreeWAV: extern(SDL_FreeWAV) func (audioBuf: UInt8*)
 sdlSemWaitTimeout: extern(SDL_SemWaitTimeout) func (sem: SDLSem*, ms: UInt32) -> Int
@@ -1014,9 +1019,7 @@ sdlHas3DNowExt: extern(SDL_Has3DNowExt) func -> Int
 sdlWriteBE32: extern(SDL_WriteBE32) func (dst: SDLRwops*, value: UInt32) -> Int
 sdlLltoa: extern(SDL_lltoa) func (value: Int64, string: Char*, radix: Int) -> Char*
 sdlWriteBE64: extern(SDL_WriteBE64) func (dst: SDLRwops*, value: UInt64) -> Int
-sdlCDPause: extern(SDL_CDPause) func (cdrom: SDLCd*) -> Int
 sdlCloseAudio: extern(SDL_CloseAudio) func
-sdlCDPlayTracks: extern(SDL_CDPlayTracks) func (cdrom: SDLCd*, startTrack: Int, startFrame: Int, ntracks: Int, nframes: Int) -> Int
 sdlEnableKeyRepeat: extern(SDL_EnableKeyRepeat) func (delay: Int, interval: Int) -> Int
 sdlQuit: extern(SDL_Quit) func
 sdlWaitEvent: extern(SDL_WaitEvent) func (event: SDLEvent*) -> Int
@@ -1024,7 +1027,6 @@ sdlGetKeyState: extern(SDL_GetKeyState) func (numkeys: Int*) -> UInt8*
 sdlRWFromFile: extern(SDL_RWFromFile) func (file: const Char*, mode: const Char*) -> SDLRwops*
 sdlCDNumDrives: extern(SDL_CDNumDrives) func -> Int
 sdlAddTimer: extern(SDL_AddTimer) func (interval: UInt32, callback: SDLNewTimerCallback, param: Void*) -> SDLTimerID
-sdlCDEject: extern(SDL_CDEject) func (cdrom: SDLCd*) -> Int
 sdlReadBE32: extern(SDL_ReadBE32) func (src: SDLRwops*) -> UInt32
 sdlFreeCursor: extern(SDL_FreeCursor) func (cursor: SDLCursor*)
 sdlLockYUVOverlay: extern(SDL_LockYUVOverlay) func (overlay: SDLOverlay*) -> Int
@@ -1039,7 +1041,6 @@ sdlLockAudio: extern(SDL_LockAudio) func
 sdlWMGrabInput: extern(SDL_WM_GrabInput) func (mode: Int) -> Int
 sdlAudioDriverName: extern(SDL_AudioDriverName) func (namebuf: Char*, maxlen: Int) -> Char*
 sdlStrlcpy: extern(SDL_strlcpy) func (dst: Char*, src: const Char*, maxlen: SizeT) -> SizeT
-sdlCDStatus: extern(SDL_CDStatus) func (cdrom: SDLCd*) -> Int
 sdlWMSetCaption: extern(SDL_WM_SetCaption) func (title: const Char*, icon: const Char*)
 sdlCreateThread: extern(SDL_CreateThread) func (fn: Func, data: Void*) -> SDLThread*
 sdlGetRelativeMouseState: extern(SDL_GetRelativeMouseState) func (x: Int*, y: Int*) -> UInt8
