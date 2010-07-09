@@ -267,7 +267,7 @@ StructSDLVideoInfo: cover from struct SDL_VideoInfo {
     currentH: extern(current_h) Int
 }
 
-StructSDLJoystick: cover from SDL_Joystick
+StructSDLJoystick: cover from struct SDL_Joystick
 
 SDLAudioStatus: extern(SDL_audiostatus) enum {
     stopped: extern(SDL_AUDIO_STOPPED)
