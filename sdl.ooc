@@ -55,13 +55,10 @@ StructSDLQuitEvent: cover from struct SDL_QuitEvent {
 
 StructSDLOverlay: cover from struct SDL_Overlay {
     format: extern UInt32
-    w: extern Int
-    h: extern Int
-    planes: extern Int
+    w, h, planes: extern Int
     pitches: extern UInt16*
-    pixels: extern UInt8**
-    hwfuncs: extern Pointer
-    hwdata: extern Pointer
+    pixels: extern UInt8** // double-pointer? lol?
+    hwfuncs, hwdata: extern Pointer
     hwOverlay: extern(hw_overlay) UInt32
     unusedBits: extern(UnusedBits) UInt32
 }
@@ -749,7 +746,16 @@ WMcursor: cover
 
 SDLQuitEvent: cover from StructSDLQuitEvent
 
-SDLOverlay: cover from StructSDLOverlay
+/// YUV Overlays
+SDLOverlay: cover from StructSDLOverlay* {
+  new: extern(SDL_CreateYUVOverlay) static func (width: Int, height: Int, format: UInt32, display: SDLSurface) -> This
+  free: extern(SDL_FreeYUVOverlay) func
+  
+  display: extern(SDL_DisplayYUVOverlay) func (overlay: SDLOverlay*, dstrect: SDLRect*) -> Int
+  
+  lock: extern(SDL_LockYUVOverlay) func -> Int
+  unlock: extern(SDL_UnlockYUVOverlay) func
+}
 
 SDLMouseMotionEvent: cover from StructSDLMouseMotionEvent
 
@@ -922,12 +928,10 @@ sdlStrrev: extern(SDL_strrev) func (string: Char*) -> Char*
 sdlGetThreadID: extern(SDL_GetThreadID) func (thread: SDLThread*) -> UInt32
 sdlLoadObject: extern(SDL_LoadObject) func (sofile: const Char*) -> Void*
 sdlVideoDriverName: extern(SDL_VideoDriverName) func (namebuf: Char*, maxlen: Int) -> Char*
-sdlFreeYUVOverlay: extern(SDL_FreeYUVOverlay) func (overlay: SDLOverlay*)
 sdlMutexV: extern(SDL_mutexV) func (mutex: SDLMutex*) -> Int
 sdlHasSSE: extern(SDL_HasSSE) func -> Int
 sdlLtoa: extern(SDL_ltoa) func (value: Long, string: Char*, radix: Int) -> Char*
 sdlLowerBlit: extern(SDL_LowerBlit) func (src: SDLSurface, srcrect: SDLRect*, dst: SDLSurface, dstrect: SDLRect*) -> Int
-sdlCreateYUVOverlay: extern(SDL_CreateYUVOverlay) func (width: Int, height: Int, format: UInt32, display: SDLSurface) -> SDLOverlay*
 sdlVideoInit: extern(SDL_VideoInit) func (driverName: const Char*, flags: SDLVideoFlags) -> Int
 sdlOpenAudio: extern(SDL_OpenAudio) func (desired: SDLAudioSpec*, obtained: SDLAudioSpec*) -> Int
 sdlReadLE32: extern(SDL_ReadLE32) func (src: SDLRwops*) -> UInt32
@@ -990,8 +994,6 @@ sdlWMGetCaption: extern(SDL_WM_GetCaption) func (title: Char**, icon: Char**)
 sdlGLUpdateRects: extern(SDL_GL_UpdateRects) func (numrects: Int, rects: SDLRect*)
 sdlKillThread: extern(SDL_KillThread) func (thread: SDLThread*)
 sdlGetRGBA: extern(SDL_GetRGBA) func (pixel: UInt32, fmt: const const SDLPixelFormat*, r: UInt8*, g: UInt8*, b: UInt8*, a: UInt8*)
-sdlUnlockYUVOverlay: extern(SDL_UnlockYUVOverlay) func (overlay: SDLOverlay*)
-sdlDisplayYUVOverlay: extern(SDL_DisplayYUVOverlay) func (overlay: SDLOverlay*, dstrect: SDLRect*) -> Int
 sdlInitSubSystem: extern(SDL_InitSubSystem) func (flags: SDLInitFlags) -> Int
 sdlSetCursor: extern(SDL_SetCursor) func (cursor: SDLCursor*)
 sdlFreeWAV: extern(SDL_FreeWAV) func (audioBuf: UInt8*)
@@ -1029,7 +1031,6 @@ sdlCDNumDrives: extern(SDL_CDNumDrives) func -> Int
 sdlAddTimer: extern(SDL_AddTimer) func (interval: UInt32, callback: SDLNewTimerCallback, param: Void*) -> SDLTimerID
 sdlReadBE32: extern(SDL_ReadBE32) func (src: SDLRwops*) -> UInt32
 sdlFreeCursor: extern(SDL_FreeCursor) func (cursor: SDLCursor*)
-sdlLockYUVOverlay: extern(SDL_LockYUVOverlay) func (overlay: SDLOverlay*) -> Int
 sdlGLSetAttribute: extern(SDL_GL_SetAttribute) func (attr: Int, value: Int) -> Int
 sdlCondBroadcast: extern(SDL_CondBroadcast) func (cond: SDLCond*) -> Int
 sdlCondWaitTimeout: extern(SDL_CondWaitTimeout) func (cond: SDLCond*, mutex: SDLMutex*, ms: UInt32) -> Int
