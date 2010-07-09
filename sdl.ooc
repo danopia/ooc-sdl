@@ -267,6 +267,8 @@ StructSDLVideoInfo: cover from struct SDL_VideoInfo {
     currentH: extern(current_h) Int
 }
 
+StructSDLJoystick: cover from SDL_Joystick
+
 SDLAudioStatus: extern(SDL_audiostatus) enum {
     stopped: extern(SDL_AUDIO_STOPPED)
     playing: extern(SDL_AUDIO_PLAYING)
@@ -733,8 +735,6 @@ SDLVersion_: cover from StructSDLVersion_
 
 SDLCond: cover
 
-SDLJoystick: cover
-
 SDLAudioCVT: cover from StructSDLAudioCVT
 
 SDLNewTimerCallback: cover from Func
@@ -813,8 +813,6 @@ SDLVideoInfo: cover from StructSDLVideoInfo
 
 StructSDLCond: cover
 
-Struct_SdlJoystick: cover
-
 StructWMcursor: cover
 
 StructSDLThread: cover
@@ -824,6 +822,30 @@ StructSDLMutex: cover
 StructSDLSemaphore: cover
 
 StructSDLSysWMmsg: cover
+
+SDLJoystick: cover from StructSDLJoystick* {
+  count: extern(SDL_NumJoysticks) static func -> Int
+  name: extern(SDL_JoystickName) static func (deviceIndex: Int) -> String
+  eventState: extern(SDL_JoystickEventState) static func (state: Int) -> Int
+  update: extern(SDL_JoystickUpdate) static func
+  opened?: extern(SDL_JoystickOpened) static func (deviceIndex: Int) -> Int
+
+  new: extern(SDL_JoystickOpen) static func (deviceIndex: Int) -> This
+  close: extern(SDL_JoystickClose) func
+
+  numHats: Int { get: extern(SDL_JoystickNumHats) }
+  numAxes: Int { get: extern(SDL_JoystickNumAxes) }
+  numButtons: Int { get: extern(SDL_JoystickNumButtons) }
+  numBalls: Int { get: extern(SDL_JoystickNumBalls) }
+
+  getHat: extern(SDL_JoystickGetHat) func (hat: Int) -> UInt8
+  getAxis: extern(SDL_JoystickGetAxis) func (axis: Int) -> Int16
+  getButton: extern(SDL_JoystickGetButton) func (button: Int) -> UInt8
+  getBall: extern(SDL_JoystickGetBall) func (ball: Int, dx: Int*, dy: Int*) -> Int
+
+  index: Int { get: extern(SDL_JoystickIndex) }
+  name: String { get { This name(index()) } }
+}
 
 IconvT: cover from Void* extends Pointer
 
@@ -839,7 +861,6 @@ sdlAllocRW: extern(SDL_AllocRW) func -> SDLRwops*
 sdlGetMouseState: extern(SDL_GetMouseState) func (x: Int*, y: Int*) -> UInt8
 sdlSemWait: extern(SDL_SemWait) func (sem: SDLSem*) -> Int
 sdlConvertAudio: extern(SDL_ConvertAudio) func (cvt: SDLAudioCVT*) -> Int
-sdlJoystickClose: extern(SDL_JoystickClose) func (joystick: SDLJoystick*)
 sdlGLGetProcAddress: extern(SDL_GL_GetProcAddress) func (proc: const Char*) -> Void*
 sdlGetTicks: extern(SDL_GetTicks) func -> UInt32
 sdlPumpEvents: extern(SDL_PumpEvents) func
@@ -851,7 +872,6 @@ sdlGetVideoInfo: extern(SDL_GetVideoInfo) func -> const SDLVideoInfo*
 sdlDestroySemaphore: extern(SDL_DestroySemaphore) func (sem: SDLSem*)
 sdlStrrev: extern(SDL_strrev) func (string: Char*) -> Char*
 sdlGetThreadID: extern(SDL_GetThreadID) func (thread: SDLThread*) -> UInt32
-sdlJoystickNumBalls: extern(SDL_JoystickNumBalls) func (joystick: SDLJoystick*) -> Int
 sdlLoadObject: extern(SDL_LoadObject) func (sofile: const Char*) -> Void*
 sdlVideoDriverName: extern(SDL_VideoDriverName) func (namebuf: Char*, maxlen: Int) -> Char*
 sdlFreeYUVOverlay: extern(SDL_FreeYUVOverlay) func (overlay: SDLOverlay*)
@@ -868,17 +888,14 @@ sdlCDPlay: extern(SDL_CDPlay) func (cdrom: SDLCd*, start: Int, length: Int) -> I
 sdlCondWait: extern(SDL_CondWait) func (cond: SDLCond*, mut: SDLMutex*) -> Int
 sdlVideoModeOK: extern(SDL_VideoModeOK) func (width: Int, height: Int, bpp: Int, flags: SDLVideoFlags) -> Int
 sdlMixAudio: extern(SDL_MixAudio) func (dst: UInt8*, src: const UInt8*, len: UInt32, volume: Int)
-sdlJoystickGetButton: extern(SDL_JoystickGetButton) func (joystick: SDLJoystick*, button: Int) -> UInt8
 sdlReadLE64: extern(SDL_ReadLE64) func (src: SDLRwops*) -> UInt64
 sdlUnlockAudio: extern(SDL_UnlockAudio) func
-sdlJoystickIndex: extern(SDL_JoystickIndex) func (joystick: SDLJoystick*) -> Int
 sdlGetKeyRepeat: extern(SDL_GetKeyRepeat) func (delay: Int*, interval: Int*)
 sdlUnlockSurface: extern(SDL_UnlockSurface) func (surface: SDLSurface*)
 sdlShowCursor: extern(SDL_ShowCursor) func (toggle: Int) -> Int
 sdlRWFromFP: extern(SDL_RWFromFP) func (fp: FILE*, autoclose: Int) -> SDLRwops*
 sdlMapRGB: extern(SDL_MapRGB) func (format: const const SDLPixelFormat*, r: const UInt8, g: const UInt8, b: const UInt8) -> UInt32
 sdlCondSignal: extern(SDL_CondSignal) func (cond: SDLCond*) -> Int
-sdlJoystickGetBall: extern(SDL_JoystickGetBall) func (joystick: SDLJoystick*, ball: Int, dx: Int*, dy: Int*) -> Int
 sdlHas3DNow: extern(SDL_Has3DNow) func -> Int
 sdlAudioQuit: extern(SDL_AudioQuit) func
 sdlWMToggleFullScreen: extern(SDL_WM_ToggleFullScreen) func (surface: SDLSurface*) -> Int
@@ -895,7 +912,6 @@ sdlWriteLE16: extern(SDL_WriteLE16) func (dst: SDLRwops*, value: UInt16) -> Int
 sdlWriteLE32: extern(SDL_WriteLE32) func (dst: SDLRwops*, value: UInt32) -> Int
 sdlWriteLE64: extern(SDL_WriteLE64) func (dst: SDLRwops*, value: UInt64) -> Int
 sdlSoftStretch: extern(SDL_SoftStretch) func (src: SDLSurface*, srcrect: SDLRect*, dst: SDLSurface*, dstrect: SDLRect*) -> Int
-sdlJoystickOpen: extern(SDL_JoystickOpen) func (deviceIndex: Int) -> SDLJoystick*
 sdlUlltoa: extern(SDL_ulltoa) func (value: UInt64, string: Char*, radix: Int) -> Char*
 sdlMapRGBA: extern(SDL_MapRGBA) func (format: const const SDLPixelFormat*, r: const UInt8, g: const UInt8, b: const UInt8, a: const UInt8) -> UInt32
 sdlCreateRGBSurfaceFrom: extern(SDL_CreateRGBSurfaceFrom) func (pixels: Void*, width: Int, height: Int, depth: Int, pitch: Int, rmask: UInt32, gmask: UInt32, bmask: UInt32, amask: UInt32) -> SDLSurface*
@@ -907,10 +923,8 @@ sdlInit: extern(SDL_Init) func (flags: SDLInitFlags) -> Int
 sdlHasSSE2: extern(SDL_HasSSE2) func -> Int
 sdlSemPost: extern(SDL_SemPost) func (sem: SDLSem*) -> Int
 sdlWaitThread: extern(SDL_WaitThread) func (thread: SDLThread*, status: Int*)
-sdlJoystickNumAxes: extern(SDL_JoystickNumAxes) func (joystick: SDLJoystick*) -> Int
 sdlLoadFunction: extern(SDL_LoadFunction) func (handle: Void*, name: const Char*) -> Void*
 sdlLoadWAVRW: extern(SDL_LoadWAV_RW) func (src: SDLRwops*, freesrc: Int, spec: SDLAudioSpec*, audioBuf: UInt8**, audioLen: UInt32*) -> SDLAudioSpec*
-sdlJoystickEventState: extern(SDL_JoystickEventState) func (state: Int) -> Int
 sdlGetError: extern(SDL_GetError) func -> Char*
 sdlConvertSurface: extern(SDL_ConvertSurface) func (src: SDLSurface*, fmt: SDLPixelFormat*, flags: SDLSurfaceFlags) -> SDLSurface*
 sdlSetAlpha: extern(SDL_SetAlpha) func (surface: SDLSurface*, flag: UInt32, alpha: UInt8) -> Int
@@ -931,7 +945,6 @@ sdlGLUnlock: extern(SDL_GL_Unlock) func
 sdlAudioInit: extern(SDL_AudioInit) func (driverName: const Char*) -> Int
 sdlSetTimer: extern(SDL_SetTimer) func (interval: UInt32, callback: SDLTimerCallback) -> Int
 sdlRemoveTimer: extern(SDL_RemoveTimer) func (t: SDLTimerID) -> Int
-sdlJoystickNumButtons: extern(SDL_JoystickNumButtons) func (joystick: SDLJoystick*) -> Int
 sdlSetClipRect: extern(SDL_SetClipRect) func (surface: SDLSurface*, rect: const SDLRect*) -> Int
 sdlPauseAudio: extern(SDL_PauseAudio) func (pauseOn: Int)
 sdlCDResume: extern(SDL_CDResume) func (cdrom: SDLCd*) -> Int
@@ -962,10 +975,8 @@ sdlSetGamma: extern(SDL_SetGamma) func (red: Float, green: Float, blue: Float) -
 sdlUnloadObject: extern(SDL_UnloadObject) func (handle: Void*)
 sdlEventState: extern(SDL_EventState) func (type: UInt8, state: Int) -> UInt8
 sdlGetCursor: extern(SDL_GetCursor) func -> SDLCursor*
-sdlJoystickUpdate: extern(SDL_JoystickUpdate) func
 sdlSetEventFilter: extern(SDL_SetEventFilter) func (filter: SDLEventFilter)
 sdlSetColorKey: extern(SDL_SetColorKey) func (surface: SDLSurface*, flag: UInt32, key: UInt32) -> Int
-sdlJoystickNumHats: extern(SDL_JoystickNumHats) func (joystick: SDLJoystick*) -> Int
 sdlPollEvent: extern(SDL_PollEvent) func (event: SDLEvent*) -> Int
 sdlMutexP: extern(SDL_mutexP) func (mutex: SDLMutex*) -> Int
 sdlHasAltiVec: extern(SDL_HasAltiVec) func -> Int
@@ -993,7 +1004,6 @@ sdlFreeSurface: extern(SDL_FreeSurface) func (surface: SDLSurface*)
 sdlReadBE32: extern(SDL_ReadBE32) func (src: SDLRwops*) -> UInt32
 sdlFreeCursor: extern(SDL_FreeCursor) func (cursor: SDLCursor*)
 sdlLockYUVOverlay: extern(SDL_LockYUVOverlay) func (overlay: SDLOverlay*) -> Int
-sdlJoystickGetAxis: extern(SDL_JoystickGetAxis) func (joystick: SDLJoystick*, axis: Int) -> Int16
 sdlGLSetAttribute: extern(SDL_GL_SetAttribute) func (attr: Int, value: Int) -> Int
 sdlCondBroadcast: extern(SDL_CondBroadcast) func (cond: SDLCond*) -> Int
 sdlSetColors: extern(SDL_SetColors) func (surface: SDLSurface*, colors: SDLColor*, firstcolor: Int, ncolors: Int) -> Int
@@ -1005,7 +1015,6 @@ sdlReadLE16: extern(SDL_ReadLE16) func (src: SDLRwops*) -> UInt16
 sdlError: extern(SDL_Error) func (code: Int)
 sdlWMSetIcon: extern(SDL_WM_SetIcon) func (icon: SDLSurface*, mask: UInt8*)
 sdlUpdateRects: extern(SDL_UpdateRects) func (screen: SDLSurface*, numrects: Int, rects: SDLRect*)
-sdlNumJoysticks: extern(SDL_NumJoysticks) func -> Int
 sdlLockAudio: extern(SDL_LockAudio) func
 sdlWMGrabInput: extern(SDL_WM_GrabInput) func (mode: Int) -> Int
 sdlAudioDriverName: extern(SDL_AudioDriverName) func (namebuf: Char*, maxlen: Int) -> Char*
@@ -1017,16 +1026,13 @@ sdlCreateThread: extern(SDL_CreateThread) func (fn: Func, data: Void*) -> SDLThr
 sdlGetVideoSurface: extern(SDL_GetVideoSurface) func -> SDLSurface*
 sdlGetRelativeMouseState: extern(SDL_GetRelativeMouseState) func (x: Int*, y: Int*) -> UInt8
 sdlClearError: extern(SDL_ClearError) func
-sdlJoystickName: extern(SDL_JoystickName) func (deviceIndex: Int) -> const Char*
 sdlWasInit: extern(SDL_WasInit) func (flags: SDLInitFlags) -> UInt32
 sdlGetRGB: extern(SDL_GetRGB) func (pixel: UInt32, fmt: const const SDLPixelFormat*, r: UInt8*, g: UInt8*, b: UInt8*)
-sdlJoystickGetHat: extern(SDL_JoystickGetHat) func (joystick: SDLJoystick*, hat: Int) -> UInt8
 sdlGetEventFilter: extern(SDL_GetEventFilter) func -> SDLEventFilter
 sdlFillRect: extern(SDL_FillRect) func (dst: SDLSurface*, dstrect: SDLRect*, color: UInt32) -> Int
 sdlSetModState: extern(SDL_SetModState) func (modstate: Int)
 sdlDisplayFormat: extern(SDL_DisplayFormat) func (surface: SDLSurface*) -> SDLSurface*
 sdlThreadID: extern(SDL_ThreadID) func -> UInt32
-sdlJoystickOpened: extern(SDL_JoystickOpened) func (deviceIndex: Int) -> Int
 sdlSetGammaRamp: extern(SDL_SetGammaRamp) func (red: const UInt16*, green: const UInt16*, blue: const UInt16*) -> Int
 sdlLockSurface: extern(SDL_LockSurface) func (surface: SDLSurface*) -> Int
 sdlLoadBMP: extern(SDL_LoadBMP) func(file: String) -> SDLSurface*
